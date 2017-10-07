@@ -31,6 +31,8 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   
+  WiFi.begin(ssid, password);
+  
   while(WiFi.status() != WL_CONNECTED){
     delay(500);
     Serial.print(".");
