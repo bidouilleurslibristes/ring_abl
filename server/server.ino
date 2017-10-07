@@ -1,9 +1,15 @@
+#include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <Adafruit_NeoPixel.h>
 
 // WiFi
-const char* ssid     = "waf";
-const char* password = "jaioublie";
+const char* ssid     = "ring_abl";
+const char* password = "nous avons oubliez";
+const int channel = 6;
+
+IPAddress local_IP(192,168,1,1);
+IPAddress gateway(192,168,1,1);
+IPAddress subnet(255,255,255,0);
 
 ESP8266WebServer server(80);
 
@@ -83,17 +89,16 @@ void stop_ring()
 
 void setup() {
   Serial.begin(9600);
-
-  WiFi.begin(ssid, password);
-
-  while(WiFi.status() != WL_CONNECTED){
-    delay(500);
-    Serial.print(".");
-  }
-    
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println(WiFi.localIP());
+  
+  Serial.print("Setting soft-AP configuration ... ");
+  WiFi.mode(WIFI_AP_STA);
+  Serial.println(WiFi.softAPConfig(local_IP, gateway, subnet) ? "Ready" : "Failed!");
+  
+  
+  Serial.print("Setting soft-AP ... ");
+  Serial.println(WiFi.softAP(ssid, password, channel, false) ? "Ready" : "Failed!");
+  Serial.println("WiFi created");
+  Serial.println(WiFi.softAPIP());
 
   server.on("/", handle_root);
   server.on("/ok", get_ok);
@@ -118,3 +123,4 @@ void loop() {
     stop_ring();  
   }
 }
+

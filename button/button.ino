@@ -11,10 +11,10 @@ int threshold = 50;
 int val = 0;
 
 // Wifi
-const char* ssid = "waf";
-const char* password = "jaioublie"; 
+const char* ssid     = "ring_abl";
+const char* password = "nous avons oubliez"; 
 
-// http clien
+// http client
 HTTPClient http_ok;
 HTTPClient http_ring;
 
@@ -30,19 +30,58 @@ void handle_set_threshold()
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
+  
+  WiFi.mode(WIFI_STA);
 
   WiFi.begin(ssid, password);
+  Serial.print("WL_IDLE_STATUS ");
+  Serial.println(WL_IDLE_STATUS);
+  Serial.print("WL_NO_SSID_AVAIL ");
+  Serial.println(WL_NO_SSID_AVAIL);
+  Serial.print("WL_SCAN_COMPLETED ");
+  Serial.println(WL_SCAN_COMPLETED);
+  Serial.print("WL_CONNECTED ");
+  Serial.println(WL_CONNECTED);
+  Serial.print("WL_CONNECT_FAILED ");
+  Serial.println(WL_CONNECT_FAILED);
+  Serial.print("WL_CONNECTION_LOST ");
+  Serial.println(WL_CONNECTION_LOST);
+  Serial.print("WL_DISCONNECTED ");
+  Serial.println(WL_DISCONNECTED);
+
+  int n = WiFi.scanNetworks();
+  Serial.println("scan done");
+  if (n == 0)
+    Serial.println("no networks found");
+  else
+  {
+    Serial.print(n);
+    Serial.println(" networks found");
+    for (int i = 0; i < n; ++i)
+    {
+      // Print SSID and RSSI for each network found
+      Serial.print(i + 1);
+      Serial.print(": ");
+      Serial.print(WiFi.SSID(i));
+      Serial.print(" (");
+      Serial.print(WiFi.RSSI(i));
+      Serial.print(")");
+      Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE)?" ":"*");
+      delay(10);
+    }
+  }
+  Serial.println("");
 
   while(WiFi.status() != WL_CONNECTED){
     delay(500);
-    Serial.print(".");
+    Serial.print(WiFi.status());
     }
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println(WiFi.localIP());
 
-  http_ring.begin("http://192.168.43.97/ring");
-  http_ok.begin("http://192.168.43.97/ok");
+  http_ring.begin("http://192.168.1.1/ring");
+  http_ok.begin("http://192.168.1.1/ok");
 
   //set server request
   server.on("/threshold", handle_set_threshold);
