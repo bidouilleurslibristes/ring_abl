@@ -31,50 +31,9 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   
-  WiFi.mode(WIFI_STA);
-
-  WiFi.begin(ssid, password);
-  Serial.print("WL_IDLE_STATUS ");
-  Serial.println(WL_IDLE_STATUS);
-  Serial.print("WL_NO_SSID_AVAIL ");
-  Serial.println(WL_NO_SSID_AVAIL);
-  Serial.print("WL_SCAN_COMPLETED ");
-  Serial.println(WL_SCAN_COMPLETED);
-  Serial.print("WL_CONNECTED ");
-  Serial.println(WL_CONNECTED);
-  Serial.print("WL_CONNECT_FAILED ");
-  Serial.println(WL_CONNECT_FAILED);
-  Serial.print("WL_CONNECTION_LOST ");
-  Serial.println(WL_CONNECTION_LOST);
-  Serial.print("WL_DISCONNECTED ");
-  Serial.println(WL_DISCONNECTED);
-
-  int n = WiFi.scanNetworks();
-  Serial.println("scan done");
-  if (n == 0)
-    Serial.println("no networks found");
-  else
-  {
-    Serial.print(n);
-    Serial.println(" networks found");
-    for (int i = 0; i < n; ++i)
-    {
-      // Print SSID and RSSI for each network found
-      Serial.print(i + 1);
-      Serial.print(": ");
-      Serial.print(WiFi.SSID(i));
-      Serial.print(" (");
-      Serial.print(WiFi.RSSI(i));
-      Serial.print(")");
-      Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE)?" ":"*");
-      delay(10);
-    }
-  }
-  Serial.println("");
-
   while(WiFi.status() != WL_CONNECTED){
     delay(500);
-    Serial.print(WiFi.status());
+    Serial.print(".");
     }
   Serial.println("");
   Serial.println("WiFi connected");
