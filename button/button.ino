@@ -22,7 +22,7 @@ HTTPClient http_ring;
 ESP8266WebServer server(80);
 
 // Led light when they aren't connect
-int pin_led_no_wifi = 16;
+int pin_led_no_wifi = 4;
 
 // Led message send
 int pin_led_message_send = 5;
