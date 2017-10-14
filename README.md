@@ -20,8 +20,8 @@ Black pin => GND
 
 Leds:
 
-* pin_led_no_wifi => pin 4 (D2 on the board)
-* pin_led_message_send => pin 5 (D1 on the board)
+* pin_led_no_wifi => between pin 4 (D2 on the board) and ground (short leg)
+* pin_led_message_send => between pin 5 (D1 on the board) and ground (short leg)
 
 
 ### Receptor

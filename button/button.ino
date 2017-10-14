@@ -14,9 +14,8 @@ int val = 0;
 const char* ssid     = "ring_abl";
 const char* password = "nous avons oubliez"; 
 
-// http client
-HTTPClient http_ok;
-HTTPClient http_ring;
+// timestamp
+unsigned long last_ring_ts;
 
 //http server
 ESP8266WebServer server(80);
@@ -26,6 +25,10 @@ int pin_led_no_wifi = 4;
 
 // Led message send
 int pin_led_message_send = 5;
+
+// Led detect light
+int pin_led_detection = 12;
+
 
 void handle_set_threshold()
 {
@@ -37,25 +40,12 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
 
+  connect_to_wifi();
+
   // LED setting
   pinMode(pin_led_no_wifi, OUTPUT);
   pinMode(pin_led_message_send, OUTPUT);
-  
-  WiFi.begin(ssid, password);
-  
-  while(WiFi.status() != WL_CONNECTED){
-    delay(500);
-    Serial.print(".");
-    digitalWrite(pin_led_no_wifi, HIGH);
-  }
-  
-  digitalWrite(pin_led_no_wifi, LOW);
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println(WiFi.localIP());
-
-  http_ring.begin("http://192.168.1.1/ring");
-  http_ok.begin("http://192.168.1.1/ok");
+  pinMode(pin_led_detection, OUTPUT);
 
   //set server request
   server.on("/threshold", handle_set_threshold);
@@ -73,15 +63,15 @@ void loop() {
     return;
   }
 
-  if(millis() % 20000 == 0)
+  if(millis() % 2000 == 0)
   {
-    http_ok.GET(); 
+    _get("/ok"); 
   }
   
   if(WiFi.status() != WL_CONNECTED)
   {
-    //WiFi.begin(ssid, password);
     digitalWrite(pin_led_no_wifi, HIGH);
+    //WiFi.begin(ssid, password);
   }
   else
   {
@@ -96,12 +86,29 @@ void loop() {
     digitalWrite(pin_led_message_send, LOW);
   }
 
+  if(digitalRead(pin_led_detection) == HIGH)
+  {
+    digitalWrite(pin_led_detection, LOW);
+  }
+
+
   Serial.println(val);
   if(val < mean - threshold)
   {
-    Serial.println("WIN");
-    if(http_ring.GET() == HTTP_CODE_OK)
+    Serial.print("TS: ");
+    Serial.println((millis() - last_ring_ts));
+
+    if ((millis() - last_ring_ts) < 10000){
+      return;
+    }
+
+    digitalWrite(pin_led_detection, HIGH);
+    int resp_code;
+    resp_code = _get("/ring");
+    if(resp_code == HTTP_CODE_OK)
     {
+      Serial.println("WIN");
+      last_ring_ts = millis();
       digitalWrite(pin_led_message_send, HIGH);
     }  
   }
@@ -122,3 +129,40 @@ int noise_mean()
   
   return sum/255;
 }
+
+void connect_to_wifi(){
+  digitalWrite(pin_led_no_wifi, HIGH);
+  Serial.print("wifi status disconnected?"); Serial.println(WiFi.status() != WL_CONNECTED);
+
+  if(WiFi.status() != WL_CONNECTED){
+    WiFi.begin(ssid, password);
+    while(WiFi.status() != WL_CONNECTED){
+      delay(500);
+      Serial.print(".");
+    }
+      
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println(WiFi.localIP());
+  }
+  digitalWrite(pin_led_no_wifi, LOW);
+
+}
+
+
+int _get(const String &endpoint){
+
+  if(WiFi.status() != WL_CONNECTED){
+    return -1
+  }
+  
+  HTTPClient _client;
+  const String url = "http://192.168.1.1"+ endpoint;
+  _client.begin(url);
+  
+  int res = _client.GET();
+  Serial.print(url); Serial.print(" :: result from get: "); Serial.println(res);
+  _client.end();
+  return res;
+}
+
