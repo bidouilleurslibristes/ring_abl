@@ -2,12 +2,23 @@
 #include <ESP8266WebServer.h>
 #include <Adafruit_NeoPixel.h>
 
+extern "C" {
+#include "user_interface.h"
+}
+
+
+#define HTTP_MAX_DATA_WAIT 500 //ms to wait for the client to send the request
+#define HTTP_MAX_POST_WAIT 500 //ms to wait for POST data to arrive
+#define HTTP_MAX_SEND_WAIT 500 //ms to wait for data chunk to be ACKed
+#define HTTP_MAX_CLOSE_WAIT 200 //ms to wait for the client to close the connection
+
+
 // WiFi
 const char* ssid     = "ring_abl";
 const char* password = "nous avons oubliez";
 const int channel = 6;
 
-IPAddress local_IP(192,168,1,1);
+IPAddress local_IP(192,168,1,2);
 IPAddress gateway(192,168,1,1);
 IPAddress subnet(255,255,255,0);
 
@@ -30,18 +41,16 @@ int last_time = 0;
 
 void handle_root()
 {
-  /*
   Serial.println("in handle root...");
   server.send(200, "text/plain", "Hello from ring abl root.");
   Serial.println("...end handle root");
-  */
 }
 
 void get_ok()
 {
  
   Serial.println("in get ok...");  
-  server.send(200, "text/plain", "Great if you are button you run");  
+  server.send(200, "text/plain", "");  
   Serial.println("...end get ok");
  
 }
@@ -49,7 +58,7 @@ void get_ok()
 void get_ring()
 {
   Serial.println("in get ring...");    
-  server.send(200, "text/plain", "I ring");  
+  server.send(200, "text/plain", "");  
 
   if(I_RING == 0)
   {
@@ -67,7 +76,6 @@ void make_ring()
     return;
   }
 
-  /*
   // Begin of animation
   last_runned = millis();
 
@@ -93,7 +101,6 @@ void make_ring()
   }
   
   pixels.show(); // This sends the updated pixel color to the hardware.
-  */
   I_RING--;
   Serial.println("...end make ring (set color)");    
 
@@ -108,16 +115,11 @@ void stop_ring()
 
 void setup() {
   Serial.begin(9600);
-  
-  Serial.print("Setting soft-AP configuration ... ");
-  WiFi.mode(WIFI_AP);
-  Serial.println(WiFi.softAPConfig(local_IP, gateway, subnet) ? "Ready" : "Failed!");
-  
-  Serial.print("Setting soft-AP ... ");
-  Serial.println(WiFi.softAP(ssid, password, channel, false) ? "Ready" : "Failed!");
-  Serial.println("WiFi created");
-  Serial.println(WiFi.softAPIP());
+  Serial.setDebugOutput(true);
 
+  // connect to wifi
+  connect_to_wifi();
+  
   server.on("/", handle_root);
   server.on("/ok", get_ok);
   server.on("/ring", get_ring);
@@ -132,9 +134,12 @@ void setup() {
 void loop() {
   server.handleClient();
 
-  if((millis() - last_time) > 500){
+  if((millis() - last_time) > 1500){
     last_time = millis();
-    Serial.println(millis()); 
+    Serial.print(millis()); 
+    uint32_t free = system_get_free_heap_size();
+    Serial.print(" - ");
+    Serial.println(free);
   }
 
   if(I_RING != 0)
@@ -144,6 +149,29 @@ void loop() {
   else
   {
     stop_ring();  
+  }
+}
+
+
+void connect_to_wifi(){
+  Serial.print("wifi status disconnected?"); Serial.println(WiFi.status() != WL_CONNECTED);
+
+  
+  IPAddress local_IP(192,168,1,2);
+  IPAddress gateway(192,168,1,1);
+  IPAddress subnet(255,255,255,0);
+  WiFi.config(local_IP, gateway, subnet);
+  
+  if(WiFi.status() != WL_CONNECTED){
+    WiFi.begin(ssid, password);
+    while(WiFi.status() != WL_CONNECTED){
+      delay(500);
+      Serial.print(".");
+    }
+      
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println(WiFi.localIP());
   }
 }
 

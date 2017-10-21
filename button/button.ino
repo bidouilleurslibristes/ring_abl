@@ -153,7 +153,7 @@ void connect_to_wifi(){
 int _get(const String &endpoint){
 
   if(WiFi.status() != WL_CONNECTED){
-    return -1
+    return -1;
   }
   
   HTTPClient _client;
