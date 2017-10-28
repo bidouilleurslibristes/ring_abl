@@ -1,6 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <Adafruit_NeoPixel.h>
+#include <ESP8266HTTPClient.h>
 
 extern "C" {
 #include "user_interface.h"
@@ -12,6 +13,7 @@ extern "C" {
 #define HTTP_MAX_SEND_WAIT 500 //ms to wait for data chunk to be ACKed
 #define HTTP_MAX_CLOSE_WAIT 200 //ms to wait for the client to close the connection
 
+#define DEBUG_ESP_PORT
 
 // WiFi
 const char* ssid     = "ring_abl";
@@ -27,7 +29,7 @@ ESP8266WebServer server(80);
 // Ring
 int I_RING = 0;
 unsigned long last_runned = 0;
-int interval_between_steps = 1000;
+int interval_between_steps = 100;
 
 // Neopixel
 #define PIN            4
@@ -142,6 +144,17 @@ void loop() {
     Serial.println(free);
   }
 
+  if(millis() % 20000 == 0)
+  {
+    Serial.printf("BAD RESET");
+    HTTPClient client;
+    client.setTimeout(4000);
+    client.begin("http://192.168.1.2/ok");
+    int resp_code = client.GET();
+    if(resp_code != HTTP_CODE_OK)
+      ESP.reset();
+  }
+  
   if(I_RING != 0)
   {
     make_ring(); 
