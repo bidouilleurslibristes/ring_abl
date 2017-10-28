@@ -41,6 +41,9 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(MAX_PIXEL_NUMBER, PIN, NEO_GRB + NE
 // debug
 int last_time = 0;
 
+unsigned long last_ok = 0;
+int I_RING_ERROR = 0;
+
 void handle_root()
 {
   Serial.println("in handle root...");
@@ -54,7 +57,7 @@ void get_ok()
   Serial.println("in get ok...");  
   server.send(200, "text/plain", "");  
   Serial.println("...end get ok");
- 
+  last_ok = millis(); 
 }
 
 void get_ring()
@@ -115,6 +118,29 @@ void stop_ring()
   pixels.show();
 }
 
+void make_ring_error()
+{
+  if((millis() - last_runned) < interval_between_steps){
+    return;
+  }
+
+  // Begin of animation
+  last_runned = millis();
+
+  int red = 100;
+  int blue = 0;
+  int green = 0;
+  
+  for(int i=0;i< (num_pixels);i++){
+    pixels.setPixelColor(i, red, green, blue); 
+  }
+  
+  pixels.show(); // This sends the updated pixel color to the hardware.
+  I_RING_ERROR--;
+  Serial.println("...end make ring (set color)");    
+
+}
+
 void setup() {
   Serial.begin(9600);
   Serial.setDebugOutput(true);
@@ -131,6 +157,8 @@ void setup() {
   
   pixels.begin();
   Serial.println("Neopixels started");
+
+  last_ok = millis();
 }
 
 void loop() {
@@ -142,6 +170,11 @@ void loop() {
     uint32_t free = system_get_free_heap_size();
     Serial.print(" - ");
     Serial.println(free);
+  }
+
+  if(millis() - last_ok > 60*1000)
+  {
+    I_RING_ERROR = 15;
   }
 
   if(millis() % 20000 == 0)
@@ -158,6 +191,15 @@ void loop() {
   if(I_RING != 0)
   {
     make_ring(); 
+  }
+  else
+  {
+    stop_ring();  
+  }
+
+  if(I_RING_ERROR != 0)
+  {
+    make_ring_error();  
   }
   else
   {
